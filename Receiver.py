@@ -5,7 +5,7 @@ import time
 
 SERVER_ADDR = ("127.0.0.1", 8888)
 NUM_CONNECTIONS = 300
-BUFFER_SIZE = 8192
+BUFFER_SIZE = io.DEFAULT_BUFFER_SIZE
 AUTH = f"{(8039) ^ (7214)}".encode()
 TIMEOUT = 0.001
 OK_MSG = b"Yuval&Ron"
@@ -55,12 +55,17 @@ def main():
             elif msg == "bye":
                 print("##############RESULTS##############")
                 print("File-number      Cubic       Reno")
+                cubic_total_time = 0
+                reno_total_time = 0
                 for i in range(len(cubic)): 
                     print(f"seq = {i} cubic = {cubic[i]} reno = {reno[i]}")
+                    cubic_total_time = cubic_total_time + cubic[i]
+                    reno_total_time = reno_total_time + reno[i]
+                print(f"The avarge time for cubic is {cubic_total_time/len(cubic)}")
+                print(f"The avarge time for reno is {reno_total_time/len(reno)}")
                 client.close()
                 break
 
 
 if __name__ == "__main__":
     main()
-
