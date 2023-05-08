@@ -4,25 +4,22 @@ import io
 import sys
 import time
 
-HALF_SIZE = (os.path.getsize("file.txt") // 2)  # ...
-SERVER_ADDR = ("127.0.0.1", 8888)  # ...
-BUFFER_SIZE = io.DEFAULT_BUFFER_SIZE # ...
-AUTH = f"{(8039) ^ (7214)}".encode()  # ...
-FIRST_HALF_FILE = "first_half.txt"
+HALF_SIZE = (os.path.getsize("file.txt") // 2)  # Half size of the file
+SERVER_ADDR = ("127.0.0.1", 9999)  
+BUFFER_SIZE = io.DEFAULT_BUFFER_SIZE # 8192
+AUTH = f"{(8039) ^ (7214)}".encode()  # xor between our ids
+FIRST_HALF_FILE = "first_half.txt" 
 SECOND_HALF_FILE = "second_half.txt"
 FILE = "file.txt"
-TIMEOUT = 0.001
 OK_MSG = b"Yuval&Ron"
 FAIL = 1
-SUCCESS = 0
 AGAIN = b"again"
 BYE = b"bye"
 
 
 def divide_file(file):
     """
-    TODO describe about function...
-    :param file:
+    TODO The function dividing the file into 2 halfs
     """
     try:
         first = file.read(HALF_SIZE)
@@ -31,7 +28,7 @@ def divide_file(file):
 
         with open(FIRST_HALF_FILE, "wb") as f1:
            f1.write(first)
-    
+
         with open(SECOND_HALF_FILE, "wb") as f2:
             f2.write(second)
     except Exception as e:
@@ -40,7 +37,7 @@ def divide_file(file):
 
 
 def main():
-    
+
     try:
         with open(FILE, "rb") as file:
             divide_file(file)
@@ -56,12 +53,10 @@ def main():
                         if not data:
                             break
                         client_sock.sendall(data)
-                        time.sleep(TIMEOUT)
                 print("First half has been sent.")
 
                 client_sock.sendall(OK_MSG)
-                time.sleep(TIMEOUT)
-                
+
                 auth = client_sock.recv(BUFFER_SIZE)
                 if auth != AUTH:
                     print("Authintication doesnt match.\nExiting...")
@@ -76,21 +71,17 @@ def main():
                         if not data:
                             break
                         client_sock.sendall(data)
-                        time.sleep(TIMEOUT)
                 print("Second file has been sent.")
 
                 client_sock.sendall(OK_MSG)
-                time.sleep(TIMEOUT)
 
                 desicion = input("Send file again? (y/n)")
                 if desicion == "y" or desicion == "Y":
                     client_sock.sendall(AGAIN)
-                    time.sleep(TIMEOUT)
                     continue
                 elif desicion == "n" or desicion == "N":
                     print("Exiting...")
                     client_sock.sendall(BYE)
-                    time.sleep(TIMEOUT)
                     client_sock.shutdown(socket.SHUT_RDWR)
                     break
     except Exception as e:
@@ -100,5 +91,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    sys.exit(SUCCESS)
-

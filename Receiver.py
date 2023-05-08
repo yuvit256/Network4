@@ -3,11 +3,10 @@ import io
 import time
 
 
-SERVER_ADDR = ("127.0.0.1", 8888)
+SERVER_ADDR = ("127.0.0.1", 9999) 
 NUM_CONNECTIONS = 300
-BUFFER_SIZE = io.DEFAULT_BUFFER_SIZE
+BUFFER_SIZE = io.DEFAULT_BUFFER_SIZE # 8192
 AUTH = f"{(8039) ^ (7214)}".encode()
-TIMEOUT = 0.001
 OK_MSG = b"Yuval&Ron"
 
 def main():
@@ -18,13 +17,15 @@ def main():
         server.bind(SERVER_ADDR)
         server.listen(NUM_CONNECTIONS)
         client, addr = server.accept()
-        
+        print(f"Got a connection from {addr}")
+
         while True:
             start1 = time.time()
             with open("received_part1.txt", "wb") as file1:
                 while True:
                     data = client.recv(BUFFER_SIZE)
                     if data.__contains__(OK_MSG):
+                        file1.write(data)
                         break
                     file1.write(data)
             end1 = time.time()
@@ -32,7 +33,6 @@ def main():
             print(f"First file has been received")
 
             client.sendall(AUTH)
-            time.sleep(TIMEOUT)
             print("Authentication has been sent.")
 
             client.setsockopt(socket.IPPROTO_TCP, socket.TCP_CONGESTION, b"reno")
@@ -43,6 +43,7 @@ def main():
                 while True:
                     data = client.recv(BUFFER_SIZE)
                     if data.__contains__(OK_MSG):
+                        file2.write(data)
                         break
                     file2.write(data)
             end2 = time.time()
@@ -57,7 +58,7 @@ def main():
                 print("File-number      Cubic       Reno")
                 cubic_total_time = 0
                 reno_total_time = 0
-                for i in range(len(cubic)): 
+                for i in range(len(cubic)):
                     print(f"seq = {i} cubic = {cubic[i]} reno = {reno[i]}")
                     cubic_total_time = cubic_total_time + cubic[i]
                     reno_total_time = reno_total_time + reno[i]
