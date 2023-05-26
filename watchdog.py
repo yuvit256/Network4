@@ -1,7 +1,8 @@
 import time
 import socket
+import io
 
-SERVER_ADDR = ('127.0.0.1', 3000)
+SERVER_ADDR = ("127.0.0.1", 3000)
 NUM_CONNECTIONS = 300
 BUFFER_SIZE = io.DEFAULT_BUFFER_SIZE # 8192
 
@@ -11,15 +12,9 @@ def main():
         server.bind(SERVER_ADDR)
         server.listen(NUM_CONNECTIONS)
         client, addr = server.accept()
-        start = time.time()
-        i=1
-        while msg = server.recv(BUFFER_SIZE) == None : 
-            time.sleep(1)
-            i=i+1
-            if i == 10:
-                print(f"server {msg.decode()} cannot be reached")
-        end = time.time()
-                
+        msg = client.recv(BUFFER_SIZE)
+        print(f"IP = {msg.decode()}")
+        client.close()
         
 if __name__ == "__main__":
     main()

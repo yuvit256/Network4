@@ -48,7 +48,7 @@ def main():
                 pong_pkt = sock.recvfrom(io.DEFAULT_BUFFER_SIZE)
                 end = time.time()
                 time.sleep(0.5)
-                print(f"Packet IP: {pong_pkt[1][0]} , seq : #{seq} , time : {end-start} Mili-Seconds")
+                print(f"Packet IP: {pong_pkt[1][0]} , seq : #{seq} , time : {end-start} seconds")
                 seq = seq + 1
     except KeyboardInterrupt: 
         if sock:

@@ -6,7 +6,7 @@ import io
 import signal
 import struct
 
-WD_ADDR = ('127.0.0.1', 3000)
+WD_ADDR = ("127.0.0.1", 3000)
 BUFFER_SIZE = io.DEFAULT_BUFFER_SIZE # 8192
 
 def calculate_checksum(data):
@@ -46,23 +46,26 @@ def main():
     try: 
         ping_pkt = create_ping_packet()
         with socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP) as sock:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP) as sockWD:
+            seq = 0
+            while True:
+                start = time.time()
+                sock.sendto(ping_pkt, (sys.argv[1], 8)) 
+                pid = os.fork()
+                if pid == 0:
+                    os.execvp("python3", ["python3", "watchdog.py"])
+                time.sleep(0.01)
+                sockWD = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
+                sockWD.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 sockWD.connect(WD_ADDR)
-                while True:
-                    start = time.time()
-                    sock.sendto(ping_pkt, (sys.argv[1], 8)) 
-                    pid = os.fork()
-                    if pid == 0:
-                        os.execvp("python3", ["python3", "watchdog.py"])
-                    pong_pkt = sock.recvfrom(BUFFER_SIZE)
-                    sockWD.sendall((pong_pkt[1][0]).encode())
-                    os.kill(pid, signal.SIGTERM)
-                    end = time.time()
-                    time.sleep(0.5)
-                    print(f"Packet IP: {pong_pkt[1][0]} , seq : #{seq} , time : {end-start} seconds")
+                pong_pkt = sock.recvfrom(BUFFER_SIZE)
+                sockWD.sendall((pong_pkt[1][0]).encode())
+                end = time.time()
+                time.sleep(0.5)
+                print(f"Packet IP: {pong_pkt[1][0]} , seq : #{seq} , time : {end-start} seconds")
+                seq = seq + 1
+            sockWD.close()
     except KeyboardInterrupt: 
         if sock:
-            sockWD.close()
             sock.close()
 
 
