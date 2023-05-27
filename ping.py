@@ -4,6 +4,7 @@ import time
 import io
 import struct
 
+
 def calculate_checksum(data):
     checksum = 0
     # Handle odd-length case
@@ -21,6 +22,7 @@ def calculate_checksum(data):
     checksum = ~checksum & 0xFFFF
     return checksum
 
+
 def create_ping_packet():
     icmp_type = 8  # ICMP Echo Request
     icmp_code = 0
@@ -36,6 +38,7 @@ def create_ping_packet():
     # Construct complete ICMP packet
     icmp_packet = icmp_header
     return icmp_packet
+
 
 def main():
     try: 

@@ -1,13 +1,10 @@
-import socket
-import sys
-import time
-import os
-import io
 import signal
+import sys
+from socket import *
+import os
+import time
 import struct
 
-WD_ADDR = ("127.0.0.1", 3000)
-BUFFER_SIZE = io.DEFAULT_BUFFER_SIZE # 8192
 
 def calculate_checksum(data):
     checksum = 0
@@ -26,6 +23,7 @@ def calculate_checksum(data):
     checksum = ~checksum & 0xFFFF
     return checksum
 
+
 def create_ping_packet():
     icmp_type = 8  # ICMP Echo Request
     icmp_code = 0
@@ -42,32 +40,33 @@ def create_ping_packet():
     icmp_packet = icmp_header
     return icmp_packet
 
+
 def main():
-    try: 
-        ping_pkt = create_ping_packet()
-        with socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP) as sock:
-            seq = 0
-            while True:
-                start = time.time()
-                sock.sendto(ping_pkt, (sys.argv[1], 8)) 
-                pid = os.fork()
-                if pid == 0:
-                    os.execvp("python3", ["python3", "watchdog.py"])
-                time.sleep(0.01)
-                sockWD = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
-                sockWD.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                sockWD.connect(WD_ADDR)
-                pong_pkt = sock.recvfrom(BUFFER_SIZE)
-                sockWD.sendall((pong_pkt[1][0]).encode())
-                end = time.time()
-                time.sleep(0.5)
-                print(f"Packet IP: {pong_pkt[1][0]} , seq : #{seq} , time : {end-start} seconds")
-                seq = seq + 1
-            sockWD.close()
-    except KeyboardInterrupt: 
-        if sock:
-            sock.close()
+    seq = 0
+    with socket(AF_INET, SOCK_RAW, IPPROTO_ICMP) as sock:
+        while True:
+            seq += 1
+            ping = create_ping_packet()
+            start = time.time()
+            sock.sendto(ping, (sys.argv[1], 0))  # port 0 because of IP header
+            pid = os.fork()
+            if pid == 0:  # child
+                os.execvp("python3", ["python3", "watchdog.py"])
+            else:  # parent
+                time.sleep(1)  # let watchdog start
+                with socket(AF_INET, SOCK_STREAM, IPPROTO_TCP) as wd:
+                    wd.connect(("127.0.0.1", 3000))
+                    wd.sendall(sys.argv[1].encode())
+                    pong = sock.recvfrom(8192)
+                    end = time.time()
+                    print(f"Packet IP: {pong[1][0]} , seq : #{seq} , time : {(end - start) - 1} seconds")
+                    wd.shutdown(SHUT_RDWR)
+                    os.kill(pid, signal.SIGTERM)
+                    os.wait()
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        sys.exit(0)
